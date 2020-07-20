@@ -1,0 +1,92 @@
+﻿查看MySQL支持的所有字符集
+	show character set;
+
+查看数据库的字符集设置。
+	show variables like 'character_set_database';
+
+查看某个表格的字符集、校对集。
+	show create table event;
+
+创建数据库。
+	create database __name__ default character set utf8mb4 default collate utf8_mb4 bin;
+	
+创建表格，同时设置它的字符集、校对集。
+	create table __name__(
+		NAME CHAR(1)
+	)CHARSET=utf8 COLLATE=utf8_general_ci;
+	
+	create table __name__(
+		NAME CHAR(1)
+	)CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+	建议使用后者，因为可能会爬到一些表情符号，占四个字节的编码
+	而普通utf8用三个字节表示一个字符
+
+修改数据库的字符集。
+	alter database __name__ character set utf8;
+
+修改表格的字符集。
+	alter table __name__ character set utf8;
+
+进入某个数据库。
+	use database __name__;
+	
+创建数据库。
+	create database __name__ DEFAULT CHARACTER SET utf8;
+	
+删除数据库。
+	drop database __name__;
+	
+显示已有的数据库。
+	show databases;
+	
+显示表格字段。
+	desc __name__;
+	
+清空表格数据。
+	delete from __name__;
+	
+查询表的行数。
+	select count(*) from event;
+	
+查看指定数据库表格大小。
+	select
+		table_schema as '数据库',
+		table_name as '表名',
+		table_rows as '记录数',
+		truncate(data_length/1024/1024, 2) as '数据容量(MB)',
+		truncate(index_length/1024/1024, 2) as '索引容量(MB)'
+		from information_schema.tables
+		where table_schema='gdelt'
+		order by data_length desc, index_length desc;
+
+'''
+全文索引相关：
+https://blog.csdn.net/mrzhouxiaofei/article/details/79940958
+'''
+在已经存在的表上建立自然语言的全文索引。
+	create fulltext index event_fulltext 
+	on week2 (Actor1Name, Actor2Name, Actor1Geo_FullName, Actor2Geo_FullName, ActionGeo_FullName, Title, Content);
+
+查看表的索引。
+	show index from event;
+	
+删除索引。
+	drop index event_fulltext on event;
+	
+使用全文索引查找。
+	select count(*) from week10 where 
+		match(Actor1Name, Actor2Name, Actor1Geo_FullName, Actor2Geo_FullName, ActionGeo_FullName, Title, Content) 
+		against('COVID-19 2019-nCov SARS-Cov-2 coronavirus WHCV WH-Human NCP Pneumonia TARS-Cov respiratory virus wuhan');
+
+	select count(*) from week10 where
+		match(Actor1Name, Actor2Name, Actor1Geo_FullName, Actor2Geo_FullName, ActionGeo_FullName, Title, Content) 
+		against('lockdown');
+	
+	__str__：以空格分隔，表示or，'china wuhan'
+			 加+，表示and，'+china +wuhan'
+	
+以“日期+关键字”的形式构造事件。
+	select count(*) from event where SQLDATE >= 'time1' and SQLDATE <= 'time2';
+		
+	select Actor1Name, Actor2Name, Actor1Geo_FullName, Actor2Geo_FullName, ActionGeo_FullName, AvgTone from event
+		where SQLDATE >= 'time1' and SQLDATE <= 'time2';
